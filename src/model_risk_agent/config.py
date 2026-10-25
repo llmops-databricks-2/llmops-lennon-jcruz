@@ -1,4 +1,4 @@
-"""Configuration management for Arxiv Curator."""
+"""Configuration management for Model Risk Agent."""
 
 import os
 from pathlib import Path

@@ -57,7 +57,7 @@ suspension after five idle minutes. Creating extra branches or computes can incr
 
 ## What is in the repo
 
-- `src/arxiv_curator/`: starts with `config.py`, which loads `project_config.yml`.
+- `src/model_risk_agent/`: starts with `config.py`, which loads `project_config.yml`.
   Add the other course modules as you work through the lectures.
 - `lecture_1/`, `lecture_2/` and so on, when you add them: copy a lecture's folder from the course
   code as it is, to the root of this repo, where its notebooks find `project_config.yml` one level up.

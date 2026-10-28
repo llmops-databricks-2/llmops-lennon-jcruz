@@ -18,6 +18,7 @@ dev:
   experiment_path: "/llmops/lennon_jcruz-dev"
   # Your provisioned Lakebase project.
   lakebase_instance: "lb-llmops-lennon-jcruz"
+  regulatory_sources_path: "regulatory_sources.yml"
 
 # Acceptance: your schema in the acceptance catalog, written by your deploys; you read it.
 acc:

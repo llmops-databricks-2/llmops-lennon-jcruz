@@ -63,6 +63,22 @@ class ProjectConfig(BaseModel):
         """Get fully qualified volume path."""
         return f"{self.catalog}.{self.schema}.{self.volume}"
 
+    
+def _resolve_path(path: str, max_up: int = 3) -> Path:
+    """Resolve a relative path from cwd or parent dirs (notebook-friendly)."""
+    
+    p = Path(path)
+    if p.is_absolute() or p.exists():
+        return p
+
+    current = Path.cwd()
+    for _ in range(max_up):
+        candidate = current / path
+        if candidate.exists():
+            return candidate
+        current = current.parent
+    return p
+
 
 def load_config(config_path: str = "project_config.yml", env: str = "dev") -> ProjectConfig:
     """Load project configuration.
@@ -75,18 +91,7 @@ def load_config(config_path: str = "project_config.yml", env: str = "dev") -> Pr
         ProjectConfig instance
 
     """
-    # Handle relative paths from notebooks
-    if not Path(config_path).is_absolute():
-        # Try to find config in parent directories
-        current = Path.cwd()
-        for _ in range(3):  # Search up to 3 levels
-            candidate = current / config_path
-            if candidate.exists():
-                config_path = str(candidate)
-                break
-            current = current.parent
-
-    return ProjectConfig.from_yaml(config_path, env)
+    return ProjectConfig.from_yaml(str(_resolve_path(config_path)), env)
 
 
 def get_env() -> str:
@@ -97,3 +102,22 @@ def get_env() -> str:
 
     """
     return os.getenv("ENV", "dev")
+
+class RegulatorySource(BaseModel):
+    """Regulatory source model."""
+
+    doc_id: str
+    title: str
+    url: str
+    description: str | None = None
+    agency: str | None = None
+    status: str | None = None
+    topics: list[str] = []
+    issued: str | None = None
+    superseded_by: str | None = None
+
+def load_regulatory_sources(path: str = "regulatory_sources.yml") -> list[RegulatorySource]:
+
+    with open(_resolve_path(path)) as f:
+        data = yaml.safe_load(f)
+    return [RegulatorySource(**item) for item in data["sources"]]

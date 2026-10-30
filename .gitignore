@@ -66,6 +66,4 @@ mlartifacts/
 
 .local/
 
-# Built packages (don't commit wheels)
-*.whl
-*.tar.gz
+notebooks/*.whl

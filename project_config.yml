@@ -13,7 +13,7 @@ dev:
   schema: "lennon_jcruz"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
+  embedding_endpoint: "databricks-gte-large-en"
   warehouse_id: "f53e7afde0b26c86"
   experiment_path: "/llmops/lennon_jcruz-dev"
   # Your provisioned Lakebase project.

@@ -88,3 +88,10 @@ GROUP BY corpus;
 SELECT id, paper_id, corpus, length(text) AS chars, substr(text, 1, 200) AS preview
 FROM llmops_dev.lennon_jcruz.mra_chunks_table
 LIMIT 20;
+
+# COMMAND ----------
+# MAGIC %sql
+SELECT id, size(embedding) AS emb_dim
+FROM llmops_dev.lennon_jcruz.mra_chunks_table
+WHERE embedding IS NOT NULL
+LIMIT 5;

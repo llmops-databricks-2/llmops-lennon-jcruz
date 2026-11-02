@@ -17,6 +17,8 @@ import time
 from typing import Any
 import requests
 from dateutil.parser import parse
+# from databricks.sdk import WorkspaceClient  # used only by the Gateway _embed_texts path below
+# from openai import OpenAI
 
 import arxiv
 from loguru import logger
@@ -372,6 +374,24 @@ class DataProcessor:
 
         return t.strip()
 
+    # def _embed_texts(self, texts: list[str]) -> list[list[float]]:
+    #     """Gateway OpenAI client path — not used: ai_query does not support AI Gateway models."""
+    #     workspace = WorkspaceClient()
+    #     client = OpenAI(
+    #         api_key=workspace.tokens.create(lifetime_seconds=3600).token_value,
+    #         base_url=f"{workspace.config.host.rstrip('/')}/ai-gateway/mlflow/v1",
+    #     )
+    #
+    #     model = self.cfg.embedding_endpoint
+    #     out: list[list[float]] = []
+    #     batch_size = 32
+    #
+    #     for i in range(0, len(texts), batch_size):
+    #         batch = texts[i : i + batch_size]
+    #         resp = client.embeddings.create(model=model, input=batch)
+    #         out.extend([row.embedding for row in sorted(resp.data, key=lambda r: r.index)])
+    #     return out
+
     def process_chunks(self) -> None:
         """
         Process parsed documents to extract, clean, and embed chunks.
@@ -442,15 +462,25 @@ class DataProcessor:
         """)
         logger.info(f"Change Data Feed enabled for {mra_chunks_table}")
 
-    def process_and_save(self) -> None:
+    def process_and_save(self, regulatory_sources_path: str | None = None) -> None:
         """
         Complete workflow: download papers, parse PDFs, and process chunks.
+
+        Args:
+            regulatory_sources_path: Path to regulatory_sources.yml. Defaults to
+                ``cfg.regulatory_sources_path`` when set, else ``regulatory_sources.yml``
+                (resolved from cwd / parents).
         """
         # Step 1: Download papers and store metadata
         self.download_and_store_papers()
 
         # Step 2: Download regulatory PDFs and store metadata
-        sources = load_regulatory_sources()
+        sources_path = (
+            regulatory_sources_path
+            or self.cfg.regulatory_sources_path
+            or "regulatory_sources.yml"
+        )
+        sources = load_regulatory_sources(sources_path)
         self.download_and_store_public_pdfs(sources)
 
         # Step 3: Parse PDFs with ai_parse_document

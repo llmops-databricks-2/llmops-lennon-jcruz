@@ -138,24 +138,24 @@ logger.info(f"  Max length: {chunk_stats['max_length']} characters")
 
 def fixed_size_chunking(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
     """Create fixed-size chunks with overlap.
-    
+
     Args:
         text: Text to chunk
         chunk_size: Size of each chunk in characters
         overlap: Number of characters to overlap between chunks
-        
+
     Returns:
         List of text chunks
     """
     chunks = []
     start = 0
-    
+
     while start < len(text):
         end = start + chunk_size
         chunk = text[start:end]
         chunks.append(chunk)
         start += (chunk_size - overlap)
-    
+
     return chunks
 
 # COMMAND ----------
@@ -183,30 +183,30 @@ logger.info(fixed_chunks[0][:200] + "...")
 
 def sentence_chunking(text: str, max_sentences: int = 5) -> list[str]:
     """Create chunks based on sentence boundaries.
-    
+
     Args:
         text: Text to chunk
         max_sentences: Maximum sentences per chunk
-        
+
     Returns:
         List of text chunks
     """
     # Simple sentence splitter (can be improved with spaCy/NLTK)
     sentences = re.split(r'(?<=[.!?])\s+', text)
-    
+
     chunks = []
     current_chunk = []
-    
+
     for sentence in sentences:
         current_chunk.append(sentence)
         if len(current_chunk) >= max_sentences:
             chunks.append(" ".join(current_chunk))
             current_chunk = []
-    
+
     # Add remaining sentences
     if current_chunk:
         chunks.append(" ".join(current_chunk))
-    
+
     return chunks
 
 # COMMAND ----------

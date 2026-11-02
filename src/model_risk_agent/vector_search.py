@@ -10,6 +10,7 @@ import psycopg
 from databricks.sdk import WorkspaceClient
 from loguru import logger
 from openai import OpenAI
+
 from model_risk_agent.config import ProjectConfig
 
 
@@ -37,12 +38,8 @@ class LakebasePgVectorManager:
         self.config = config
         self.catalog = config.catalog if config else catalog
         self.schema = config.schema if config else schema
-        self.lakebase_project_id = (
-            config.lakebase_project_id if config else lakebase_project_id
-        )
-        self.embedding_model = embedding_model or (
-            config.embedding_endpoint if config else None
-        )
+        self.lakebase_project_id = config.lakebase_project_id if config else lakebase_project_id
+        self.embedding_model = embedding_model or (config.embedding_endpoint if config else None)
         if not self.catalog or not self.schema or not self.lakebase_project_id:
             raise ValueError("catalog, schema, and lakebase_project_id are required")
         if not self.embedding_model:
@@ -75,14 +72,9 @@ class LakebasePgVectorManager:
             database = "databricks_postgres"
         credential = postgres_api.generate_database_credential(endpoint=endpoint_name)
         client_id = os.environ.get("DATABRICKS_CLIENT_ID")
-        username = urllib.parse.quote_plus(
-            client_id or workspace.current_user.me().user_name
-        )
+        username = urllib.parse.quote_plus(client_id or workspace.current_user.me().user_name)
 
-        self._connection_string = (
-            f"postgresql://{username}:{credential.token}@{host}:5432/"
-            f"{database}?sslmode=require"
-        )
+        self._connection_string = f"postgresql://{username}:{credential.token}@{host}:5432/{database}?sslmode=require"
         return self._connection_string
 
     def connection(self) -> psycopg.Connection:
@@ -136,12 +128,11 @@ class LakebasePgVectorManager:
         return list(response.data[0].embedding)
 
     def _fetch(self, sql: str, params: list[Any]) -> list[dict[str, Any]]:
-        with self.connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(sql, params)
-                rows = cursor.fetchall()
-                columns = [description.name for description in cursor.description]
-        return [dict(zip(columns, row)) for row in rows]
+        with self.connection() as conn, conn.cursor() as cursor:
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+            columns = [description.name for description in cursor.description]
+        return [dict(zip(columns, row, strict=True)) for row in rows]
 
     def search(
         self,

@@ -1,26 +1,13 @@
-"""
-arXiv API
-   ↓ (download_and_store_papers)
-PDFs in Volume + arxiv_papers table
-   ↓ (parse_pdfs_with_ai)
-ai_parsed_docs_table (JSON)
-   ↓ (process_chunks)
-arxiv_chunks_table (clean text + metadata + embedding)
-   ├─ (AI Search Delta Sync index) (2.4 notebook)
-   └─ (Lakebase Synced Table + LakebasePgVectorManager search) (2.5 notebook)
-"""
+"""Pipeline for ingesting, parsing, chunking, and embedding MRA documents."""
 
 import json
 import os
 import re
 import time
-from typing import Any
-import requests
-from dateutil.parser import parse
-# from databricks.sdk import WorkspaceClient  # used only by the Gateway _embed_texts path below
-# from openai import OpenAI
 
 import arxiv
+import requests
+from dateutil.parser import parse
 from loguru import logger
 from pyspark.sql import SparkSession
 from pyspark.sql import types as T
@@ -34,8 +21,7 @@ from pyspark.sql.functions import (
 )
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 
-from model_risk_agent.config import ProjectConfig
-from model_risk_agent.config import RegulatorySource, load_regulatory_sources
+from model_risk_agent.config import ProjectConfig, RegulatorySource, load_regulatory_sources
 
 SOURCE_DOCUMENTS_SCHEMA = T.StructType(
     [
@@ -51,9 +37,10 @@ SOURCE_DOCUMENTS_SCHEMA = T.StructType(
     ]
 )
 
+
 class DataProcessor:
-    """
-    DataProcessor handles the complete workflow of:
+    """Run the MRA document workflow from download through embedded chunks.
+
     - Downloading papers from arXiv
     - Storing paper metadata
     - Parsing PDFs with ai_parse_document
@@ -62,12 +49,12 @@ class DataProcessor:
     """
 
     def __init__(self, spark: SparkSession, config: ProjectConfig) -> None:
-        """
-        Initialize DataProcessor with Spark session and configuration.
+        """Initialize DataProcessor with Spark session and configuration.
 
         Args:
             spark: SparkSession instance
             config: ProjectConfig object with table configurations
+
         """
         self.spark = spark
         self.cfg = config
@@ -78,9 +65,7 @@ class DataProcessor:
         full_volume = f"{self.catalog}.{self.schema}.{self.volume}"  # UC name
         volume_root = f"/Volumes/{self.catalog}/{self.schema}/{self.volume}"
 
-        self.spark.sql(
-            f"CREATE VOLUME IF NOT EXISTS {full_volume}"
-        )
+        self.spark.sql(f"CREATE VOLUME IF NOT EXISTS {full_volume}")
 
         self.end = time.strftime("%Y%m%d%H%M", time.gmtime())
         # Fixed URL set; same docs every run
@@ -94,13 +79,14 @@ class DataProcessor:
         self.parsed_table = f"{self.catalog}.{self.schema}.mra_ai_parsed_docs"
 
     def _get_range_start(self) -> str:
-        """
-        Get start time range for arxiv paper search.
+        """Get start time range for arxiv paper search.
+
         If arxiv_papers table exists, uses max(processed) as start.
         Otherwise, uses 720 days ago as start.
 
         Returns:
             start string in "YYYYMMDDHHMM" format
+
         """
         days = 720  # first backfill
 
@@ -112,15 +98,12 @@ class DataProcessor:
             """).collect()
             max_processed = result[0][0]
 
-
             if max_processed is not None:
                 start = str(max_processed)
                 logger.info(f"Found existing arxiv_papers table. Starting from: {start}")
             else:
                 start = time.strftime("%Y%m%d%H%M", time.gmtime(time.time() - 24 * 3600 * days))
-                logger.info(
-                    f"Table exists but no processed records. Starting from {days} days ago: {start}"
-                )
+                logger.info(f"Table exists but no processed records. Starting from {days} days ago: {start}")
         else:
             start = time.strftime("%Y%m%d%H%M", time.gmtime(time.time() - 24 * 3600 * days))
             logger.info(f"No existing arxiv_papers table. Starting from {days} days ago: {start}")
@@ -129,13 +112,12 @@ class DataProcessor:
     def download_and_store_papers(
         self,
     ) -> list[dict] | None:
-        """
-        Download papers from arxiv and store metadata
-        in arxiv_papers table.
+        """Download papers from arxiv and store metadata in arxiv_papers table.
 
         Returns:
             List of paper metadata dictionaries if papers were downloaded,
             otherwise None
+
         """
         start = self._get_range_start()
 
@@ -150,7 +132,9 @@ class DataProcessor:
 
         # Search for papers in arxiv
         client = arxiv.Client()
-        search = arxiv.Search(query=f'cat:q-fin.RM AND (all:"credit risk" OR all:"model risk") AND submittedDate:[{start} TO {self.end}]')
+        search = arxiv.Search(
+            query=f'cat:q-fin.RM AND (all:"credit risk" OR all:"model risk") AND submittedDate:[{start} TO {self.end}]'
+        )
         papers = client.results(search)
 
         # Download papers and collect metadata
@@ -203,16 +187,17 @@ class DataProcessor:
         self,
         regulatory_sources: list[RegulatorySource],
     ) -> list[dict] | None:
-        """
-        Download public PDFs given a list of URLs and store them in the volume. 
+        """Download public PDFs and store them in the volume.
+
         This is used to download regulatory PDFs from the web.
+
         Args:
-            urls: List of URLs to download
+            regulatory_sources: List of regulatory source records with URLs.
+
         Returns:
-            List of file paths if PDFs were downloaded, otherwise None
+            List of metadata records if PDFs were downloaded, otherwise None.
+
         """
-
-
         existing_ids = set()
         if self.spark.catalog.tableExists(self.papers_table):
             rows = self.spark.sql(f"""
@@ -221,7 +206,6 @@ class DataProcessor:
                 WHERE corpus = 'regulatory'
             """).collect()
             existing_ids = {r.paper_id for r in rows}
-
 
         records = []
 
@@ -238,7 +222,7 @@ class DataProcessor:
                 response = requests.get(url)
                 response.raise_for_status()
                 file_path = os.path.join(self.regulatory_dir, f"{doc_id}.pdf")
-                with open(file_path, 'wb') as f:
+                with open(file_path, "wb") as f:
                     f.write(response.content)
                     records.append(
                         {
@@ -274,11 +258,7 @@ class DataProcessor:
         return records
 
     def parse_pdfs_with_ai(self) -> None:
-        """
-        Parse PDFs using ai_parse_document and store in ai_parsed_docs table.
-
-        """
-
+        """Parse PDFs using ai_parse_document and store in ai_parsed_docs table."""
         self.spark.sql(f"""
             CREATE TABLE IF NOT EXISTS {self.parsed_table} (
                 path STRING,
@@ -318,8 +298,7 @@ class DataProcessor:
 
     @staticmethod
     def _extract_chunks(parsed_content_json: str) -> list[tuple[str, str]]:
-        """
-        Extract chunks from parsed_content JSON.
+        """Extract chunks from parsed_content JSON.
 
         Args:
             parsed_content_json: JSON string containing
@@ -327,6 +306,7 @@ class DataProcessor:
 
         Returns:
             List of tuples containing (chunk_id, content)
+
         """
         parsed_dict = json.loads(parsed_content_json)
         chunks = []
@@ -341,26 +321,27 @@ class DataProcessor:
 
     @staticmethod
     def _extract_paper_id(path: str) -> str:
-        """
-        Extract paper ID from file path.
+        """Extract paper ID from file path.
 
         Args:
             path: File path (e.g., "/path/to/paper_id.pdf")
 
         Returns:
             Paper ID extracted from the path
+
         """
         return path.replace(".pdf", "").split("/")[-1]
 
     @staticmethod
     def _clean_chunk(text: str) -> str:
-        """
-        Clean and normalize chunk text
+        """Clean and normalize chunk text.
+
         Args:
-            text: Raw text content
+            text: Raw text content.
 
         Returns:
-            Cleaned text content
+            Cleaned text content.
+
         """
         # Fix hyphenation across line breaks:
         # "docu-\nments" => "documents"
@@ -374,28 +355,10 @@ class DataProcessor:
 
         return t.strip()
 
-    # def _embed_texts(self, texts: list[str]) -> list[list[float]]:
-    #     """Gateway OpenAI client path — not used: ai_query does not support AI Gateway models."""
-    #     workspace = WorkspaceClient()
-    #     client = OpenAI(
-    #         api_key=workspace.tokens.create(lifetime_seconds=3600).token_value,
-    #         base_url=f"{workspace.config.host.rstrip('/')}/ai-gateway/mlflow/v1",
-    #     )
-    #
-    #     model = self.cfg.embedding_endpoint
-    #     out: list[list[float]] = []
-    #     batch_size = 32
-    #
-    #     for i in range(0, len(texts), batch_size):
-    #         batch = texts[i : i + batch_size]
-    #         resp = client.embeddings.create(model=model, input=batch)
-    #         out.extend([row.embedding for row in sorted(resp.data, key=lambda r: r.index)])
-    #     return out
-
     def process_chunks(self) -> None:
-        """
-        Process parsed documents to extract, clean, and embed chunks.
-        Reads from ai_parsed_docs table and saves to arxiv_chunks table.
+        """Process parsed documents to extract, clean, and embed chunks.
+
+        Reads from ai_parsed_docs table and saves to mra_chunks_table.
         """
         logger.info(f"Processing parsed documents from {self.parsed_table} for end date {self.end}")
 
@@ -450,9 +413,7 @@ class DataProcessor:
 
         # Write to table (mergeSchema adds the embedding column to existing tables)
         mra_chunks_table = f"{self.catalog}.{self.schema}.mra_chunks_table"
-        chunks_df.write.mode("append").option("mergeSchema", "true").saveAsTable(
-            mra_chunks_table
-        )
+        chunks_df.write.mode("append").option("mergeSchema", "true").saveAsTable(mra_chunks_table)
         logger.info(f"Saved chunks to {mra_chunks_table}")
 
         # Enable Change Data Feed
@@ -463,23 +424,19 @@ class DataProcessor:
         logger.info(f"Change Data Feed enabled for {mra_chunks_table}")
 
     def process_and_save(self, regulatory_sources_path: str | None = None) -> None:
-        """
-        Complete workflow: download papers, parse PDFs, and process chunks.
+        """Complete workflow: download papers, parse PDFs, and process chunks.
 
         Args:
             regulatory_sources_path: Path to regulatory_sources.yml. Defaults to
                 ``cfg.regulatory_sources_path`` when set, else ``regulatory_sources.yml``
                 (resolved from cwd / parents).
+
         """
         # Step 1: Download papers and store metadata
         self.download_and_store_papers()
 
         # Step 2: Download regulatory PDFs and store metadata
-        sources_path = (
-            regulatory_sources_path
-            or self.cfg.regulatory_sources_path
-            or "regulatory_sources.yml"
-        )
+        sources_path = regulatory_sources_path or self.cfg.regulatory_sources_path or "regulatory_sources.yml"
         sources = load_regulatory_sources(sources_path)
         self.download_and_store_public_pdfs(sources)
 

@@ -112,4 +112,3 @@ if response.usage is not None:
     logger.info(f"Output tokens: {response.usage.output_tokens}")
 
 # COMMAND ----------
-

@@ -73,10 +73,9 @@ class ProjectConfig(BaseModel):
         """Get fully qualified volume path."""
         return f"{self.catalog}.{self.schema}.{self.volume}"
 
-    
+
 def _resolve_path(path: str, max_up: int = 3) -> Path:
     """Resolve a relative path from cwd or parent dirs (notebook-friendly)."""
-    
     p = Path(path)
     if p.is_absolute() or p.exists():
         return p
@@ -113,6 +112,7 @@ def get_env() -> str:
     """
     return os.getenv("ENV", "dev")
 
+
 class RegulatorySource(BaseModel):
     """Regulatory source model."""
 
@@ -126,8 +126,17 @@ class RegulatorySource(BaseModel):
     issued: str | None = None
     superseded_by: str | None = None
 
-def load_regulatory_sources(path: str = "regulatory_sources.yml") -> list[RegulatorySource]:
 
+def load_regulatory_sources(path: str = "regulatory_sources.yml") -> list[RegulatorySource]:
+    """Load regulatory PDF sources from a YAML file.
+
+    Args:
+        path: Path to the regulatory sources YAML file.
+
+    Returns:
+        List of RegulatorySource records.
+
+    """
     with open(_resolve_path(path)) as f:
         data = yaml.safe_load(f)
     return [RegulatorySource(**item) for item in data["sources"]]

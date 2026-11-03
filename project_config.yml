@@ -11,7 +11,7 @@ usage_policy_id: "af9e2850-ed3a-3d2d-9cd0-fe618692bb3f"
 dev:
   catalog: "llmops_dev"
   schema: "lennon_jcruz"
-  volume: "arxiv_files"
+  volume: "mra_source_documents"
   model_doc_volume: "mra_model_docs"
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.
@@ -27,7 +27,7 @@ dev:
 acc:
   catalog: "llmops_acc"
   schema: "lennon_jcruz"
-  volume: "arxiv_files"
+  volume: "mra_source_documents"
   model_doc_volume: "mra_model_docs"
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.
@@ -42,7 +42,7 @@ acc:
 prd:
   catalog: "llmops_prd"
   schema: "lennon_jcruz"
-  volume: "arxiv_files"
+  volume: "mra_source_documents"
   model_doc_volume: "mra_model_docs"
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.

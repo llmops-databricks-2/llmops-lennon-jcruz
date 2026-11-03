@@ -1,5 +1,7 @@
 # Project configuration for the LLMOps course, filled in for you at onboarding.
 # Resources are provisioned at onboarding except the volume, which you create during the course.
+# embedding_endpoint is the serving endpoint for ai_query, AI Search and DatabricksServingEndpoint;
+# embedding_service is the AI Gateway model service for the OpenAI client (README.md).
 
 # Your usage policy: set it on every serverless job, endpoint and app you create.
 usage_policy_id: "af9e2850-ed3a-3d2d-9cd0-fe618692bb3f"
@@ -13,9 +15,10 @@ dev:
   schema: "lennon_jcruz"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
-  warehouse_id: "f53e7afde0b26c86"
-  experiment_path: "/llmops/lennon_jcruz-dev"
+  embedding_endpoint: "databricks-gte-large-en"
+  embedding_service: "course_ops.gateway.embed"
+  warehouse_id: "d1353df6c9a61c55"
+  experiment_path: "/llmops/lennon-jcruz-dev"
   # Your provisioned Lakebase project.
   lakebase_instance: "lb-llmops-lennon-jcruz"
 
@@ -25,9 +28,10 @@ acc:
   schema: "lennon_jcruz"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
-  warehouse_id: "f53e7afde0b26c86"
-  experiment_path: "/llmops/lennon_jcruz-acc"
+  embedding_endpoint: "databricks-gte-large-en"
+  embedding_service: "course_ops.gateway.embed"
+  warehouse_id: "d1353df6c9a61c55"
+  experiment_path: "/llmops/lennon-jcruz-acc"
   # Your provisioned Lakebase project for this environment.
   lakebase_instance: "lb-llmops-lennon-jcruz"
 
@@ -37,8 +41,9 @@ prd:
   schema: "lennon_jcruz"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
-  warehouse_id: "f53e7afde0b26c86"
-  experiment_path: "/llmops/lennon_jcruz-prd"
+  embedding_endpoint: "databricks-gte-large-en"
+  embedding_service: "course_ops.gateway.embed"
+  warehouse_id: "d1353df6c9a61c55"
+  experiment_path: "/llmops/lennon-jcruz-prd"
   # Your provisioned Lakebase project for this environment.
   lakebase_instance: "lb-llmops-lennon-jcruz"

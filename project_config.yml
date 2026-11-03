@@ -15,8 +15,8 @@ dev:
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.
   embedding_endpoint: "databricks-gte-large-en"
-  warehouse_id: "f53e7afde0b26c86"
-  experiment_path: "/llmops/lennon_jcruz-dev"
+  warehouse_id: "d1353df6c9a61c55"
+  experiment_path: "/llmops/lennon-jcruz-dev"
   # Your provisioned Lakebase project.
   lakebase_project_id: "lb-llmops-lennon-jcruz"
   regulatory_sources_path: "regulatory_sources.yml"
@@ -29,8 +29,8 @@ acc:
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.
   embedding_endpoint: "databricks-gte-large-en"
-  warehouse_id: "f53e7afde0b26c86"
-  experiment_path: "/llmops/lennon_jcruz-acc"
+  warehouse_id: "d1353df6c9a61c55"
+  experiment_path: "/llmops/lennon-jcruz-acc"
   # Your provisioned Lakebase project for this environment.
   lakebase_project_id: "lb-llmops-lennon-jcruz"
 
@@ -42,7 +42,7 @@ prd:
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.
   embedding_endpoint: "databricks-gte-large-en"
-  warehouse_id: "f53e7afde0b26c86"
-  experiment_path: "/llmops/lennon_jcruz-prd"
+  warehouse_id: "d1353df6c9a61c55"
+  experiment_path: "/llmops/lennon-jcruz-prd"
   # Your provisioned Lakebase project for this environment.
   lakebase_project_id: "lb-llmops-lennon-jcruz"

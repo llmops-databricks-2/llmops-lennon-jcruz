@@ -13,11 +13,13 @@ dev:
   schema: "lennon_jcruz"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
+  # Use the serving endpoint supported by batch ai_query and AI Search.
+  embedding_endpoint: "databricks-gte-large-en"
   warehouse_id: "f53e7afde0b26c86"
   experiment_path: "/llmops/lennon_jcruz-dev"
   # Your provisioned Lakebase project.
-  lakebase_instance: "lb-llmops-lennon-jcruz"
+  lakebase_project_id: "lb-llmops-lennon-jcruz"
+  regulatory_sources_path: "regulatory_sources.yml"
 
 # Acceptance: your schema in the acceptance catalog, written by your deploys; you read it.
 acc:
@@ -25,11 +27,12 @@ acc:
   schema: "lennon_jcruz"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
+  # Use the serving endpoint supported by batch ai_query and AI Search.
+  embedding_endpoint: "databricks-gte-large-en"
   warehouse_id: "f53e7afde0b26c86"
   experiment_path: "/llmops/lennon_jcruz-acc"
   # Your provisioned Lakebase project for this environment.
-  lakebase_instance: "lb-llmops-lennon-jcruz"
+  lakebase_project_id: "lb-llmops-lennon-jcruz"
 
 # Production: your schema in the production catalog, written by your deploys; you read it.
 prd:
@@ -37,8 +40,9 @@ prd:
   schema: "lennon_jcruz"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
+  # Use the serving endpoint supported by batch ai_query and AI Search.
+  embedding_endpoint: "databricks-gte-large-en"
   warehouse_id: "f53e7afde0b26c86"
   experiment_path: "/llmops/lennon_jcruz-prd"
   # Your provisioned Lakebase project for this environment.
-  lakebase_instance: "lb-llmops-lennon-jcruz"
+  lakebase_project_id: "lb-llmops-lennon-jcruz"

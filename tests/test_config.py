@@ -5,7 +5,7 @@
 
 from pathlib import Path
 
-from arxiv_curator.config import ProjectConfig
+from model_risk_agent.config import ProjectConfig
 
 PROJECT_CONFIG = Path(__file__).resolve().parents[1] / "project_config.yml"
 

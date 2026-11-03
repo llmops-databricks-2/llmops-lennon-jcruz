@@ -63,3 +63,7 @@ mlartifacts/
 # Temporary files
 *.tmp
 *.bak
+
+.local/
+
+notebooks/*.whl

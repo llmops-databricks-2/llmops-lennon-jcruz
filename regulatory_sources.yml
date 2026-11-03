@@ -1,0 +1,157 @@
+sources:
+  # --- Model risk management (current) ---
+  - doc_id: frb-sr-26-2
+    title: "SR 26-2 — Revised Guidance on Model Risk Management (cover letter)"
+    url: "https://www.federalreserve.gov/supervisionreg/srletters/SR2602.pdf"
+    description: >
+      Federal Reserve supervisory letter (2026-04-17) announcing the revised
+      interagency model risk management guidance; supersedes SR 11-7 and SR 21-8.
+      Most relevant to banking organizations over $30B in assets.
+    agency: FRB
+    status: current
+    topics: [model_risk]
+    issued: "2026-04-17"
+
+  - doc_id: frb-sr-26-2-attachment
+    title: "Supervisory Guidance on Model Risk Management (SR 26-2 attachment)"
+    url: "https://www.federalreserve.gov/supervisionreg/srletters/sr2602a1.pdf"
+    description: >
+      Full interagency MRM guidance (FRB / OCC / FDIC). Risk-based principles for
+      model development, validation, governance, and effective challenge; replaces
+      the SR 11-7 framework.
+    agency: FRB-OCC-FDIC
+    status: current
+    topics: [model_risk, validation, governance]
+    issued: "2026-04-17"
+
+  # --- Model risk management (historical / superseded) ---
+  - doc_id: frb-sr-11-7
+    title: "SR 11-7 — Guidance on Model Risk Management (cover letter)"
+    url: "https://www.federalreserve.gov/boarddocs/srletters/2011/sr1107.pdf"
+    description: >
+      Historic Federal Reserve / OCC letter (2011-04-04) introducing the classic
+      model risk management supervisory guidance. Superseded by SR 26-2 (2026).
+    agency: FRB
+    status: superseded
+    topics: [model_risk]
+    issued: "2011-04-04"
+    superseded_by: frb-sr-26-2
+
+  - doc_id: frb-sr-11-7-attachment
+    title: "Supervisory Guidance on Model Risk Management (SR 11-7 attachment)"
+    url: "https://www.federalreserve.gov/boarddocs/srletters/2011/sr1107a1.pdf"
+    description: >
+      Full 2011 MRM guidance: model definition, development/implementation/use,
+      validation (conceptual soundness, ongoing monitoring, outcomes analysis),
+      and governance. Foundational vocabulary still cited in industry practice;
+      officially superseded by the 2026 interagency guidance.
+    agency: FRB-OCC
+    status: superseded
+    topics: [model_risk, validation, conceptual_soundness, governance]
+    issued: "2011-04-04"
+    superseded_by: frb-sr-26-2-attachment
+
+  - doc_id: occ-bulletin-2011-12
+    title: "OCC Bulletin 2011-12 — Sound Practices for Model Risk Management"
+    url: "https://www.occ.gov/static/rescinded-bulletins/bulletin-2011-12.pdf"
+    description: >
+      OCC national-bank issuance of the 2011 MRM supervisory guidance (parallel to
+      SR 11-7). Rescinded and replaced by OCC Bulletin 2026-13.
+    agency: OCC
+    status: rescinded
+    topics: [model_risk, validation, governance]
+    issued: "2011-04-04"
+    superseded_by: frb-sr-26-2-attachment
+
+  # --- US GAAP credit-loss provisions (CECL; not IFRS 9) ---
+  - doc_id: fasb-asu-2016-13
+    title: "ASU 2016-13 — Financial Instruments—Credit Losses (Topic 326) / CECL"
+    url: "https://storage.fasb.org/ASU_2016-13.pdf"
+    description: >
+      FASB Accounting Standards Update establishing US GAAP current expected credit
+      losses (CECL) under ASC Topic 326. Primary accounting standard for US
+      provisions / ACL models (US counterpart theme to IFRS 9 ECL, but different rules).
+    agency: FASB
+    status: current
+    topics: [cecl, credit_loss, provisions, us_gaap]
+    issued: "2016-06"
+
+  - doc_id: frb-sr-20-12
+    title: "SR 20-12 — Interagency Policy Statement on Allowances for Credit Losses (cover)"
+    url: "https://www.federalreserve.gov/supervisionreg/srletters/SR2012.pdf"
+    description: >
+      Federal Reserve cover letter for the interagency ACL / CECL policy statement
+      (revised April 2023). Points examiners and banks to measurement, documentation,
+      validation, and governance expectations for allowances.
+    agency: FRB
+    status: current
+    topics: [cecl, acl, credit_loss]
+    issued: "2020-05-08"
+
+  - doc_id: frb-sr-20-12-attachment
+    title: "Interagency Policy Statement on Allowances for Credit Losses (revised 2023)"
+    url: "https://www.federalreserve.gov/supervisionreg/srletters/SR2012a1.pdf"
+    description: >
+      Full FRB / FDIC / NCUA / OCC policy on estimating and reviewing ACLs under
+      ASC 326: estimation design, documentation, validation, internal controls,
+      board/management responsibilities, and examiner review.
+    agency: FRB-FDIC-NCUA-OCC
+    status: current
+    topics: [cecl, acl, credit_loss, validation]
+    issued: "2023-04-21"
+
+  - doc_id: frb-sr-19-8-attachment
+    title: "Frequently Asked Questions on the Current Expected Credit Losses Methodology (CECL)"
+    url: "https://www.federalreserve.gov/supervisionreg/srletters/sr1908a1.pdf"
+    description: >
+      Interagency CECL FAQs (SR 19-8 attachment) clarifying supervisory expectations
+      around ASC 326 implementation for banks and credit unions.
+    agency: FRB-OCC-FDIC-NCUA
+    status: current
+    topics: [cecl, acl, faq]
+    issued: "2019-04-03"
+
+  # --- Credit risk review / lending (federal) ---
+  - doc_id: frb-sr-20-13
+    title: "SR 20-13 — Interagency Guidance on Credit Risk Review Systems (cover)"
+    url: "https://www.federalreserve.gov/supervisionreg/srletters/SR2013.pdf"
+    description: >
+      Federal Reserve cover letter transmitting interagency credit risk review
+      guidance (replaces older loan-review language tied to ALLL).
+    agency: FRB
+    status: current
+    topics: [credit_risk, loan_review]
+    issued: "2020-05-08"
+
+  - doc_id: frb-sr-20-13-attachment
+    title: "Interagency Guidance on Credit Risk Review Systems"
+    url: "https://www.federalreserve.gov/supervisionreg/srletters/SR2013a1.pdf"
+    description: >
+      Sound practices for independent, ongoing credit risk review and reporting to
+      management and the board; aligned with safety-and-soundness standards and CECL-era terminology.
+    agency: FRB-FDIC-NCUA-OCC
+    status: current
+    topics: [credit_risk, loan_review, governance]
+    issued: "2020-05"
+
+  - doc_id: occ-ch-allowances-credit-losses
+    title: "OCC Comptroller's Handbook — Allowances for Credit Losses (v2.0)"
+    url: "https://www.occ.gov/publications-and-resources/publications/comptrollers-handbook/files/allowances-for-credit-losses/pub-ch-allowances-credit-losses.pdf"
+    description: >
+      OCC examiner handbook on ACL / CECL for national banks and federal savings
+      associations: risks, primary ACL components, and examination procedures under ASC 326.
+    agency: OCC
+    status: current
+    topics: [cecl, acl, credit_loss, examination]
+    issued: "2026-07"
+
+  - doc_id: occ-ch-lending-loan-portfolio
+    title: "OCC Comptroller's Handbook — Lending and Loan Portfolio Risk Management"
+    url: "https://www.occ.gov/publications-and-resources/publications/comptrollers-handbook/files/lending-loan-portfolio-risk-management/pub-ch-lending-loan-portfolio.pdf"
+    description: >
+      OCC handbook on lending and loan portfolio risk management, including credit
+      underwriting, portfolio monitoring, and references to model risk management for credit models.
+    agency: OCC
+    status: current
+    topics: [credit_risk, lending, portfolio_risk, model_risk]
+    issued: "2026-07"

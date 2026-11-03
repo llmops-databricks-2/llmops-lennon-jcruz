@@ -1,4 +1,4 @@
-"""Configuration management for Arxiv Curator."""
+"""Configuration management for Model Risk Agent."""
 
 import os
 from pathlib import Path
@@ -10,13 +10,19 @@ from pydantic import BaseModel, Field
 class ProjectConfig(BaseModel):
     """Project configuration model."""
 
+    usage_policy_id: str | None = Field(None, description="Usage policy id")
     catalog: str = Field(..., description="Unity Catalog name")
     db_schema: str = Field(..., description="Schema name", alias="schema")
     volume: str = Field(..., description="Volume name")
     llm_endpoint: str = Field(..., description="AI Gateway chat model service name")
     embedding_endpoint: str = Field(..., description="AI Gateway embedding model service name")
     experiment_path: str = Field(..., description="MLflow experiment path for this environment")
+    lakebase_project_id: str = Field(..., description="Lakebase project ID")
     warehouse_id: str = Field(..., description="Warehouse ID")
+    regulatory_sources_path: str | None = Field(
+        default="regulatory_sources.yml",
+        description="Path to regulatory_sources.yml (resolved from cwd / parents)",
+    )
     genie_space_id: str | None = Field(None, description="Genie space ID for MCP integration")
     system_prompt: str = Field(
         default="You are a helpful AI assistant that helps users find and understand research papers.",
@@ -46,6 +52,10 @@ class ProjectConfig(BaseModel):
         if env not in config_data:
             raise ValueError(f"Environment '{env}' not found in config file")
 
+        env_config = config_data[env]
+        if "usage_policy_id" in config_data:
+            env_config["usage_policy_id"] = config_data["usage_policy_id"]
+
         return cls(**config_data[env])
 
     @property
@@ -64,6 +74,21 @@ class ProjectConfig(BaseModel):
         return f"{self.catalog}.{self.schema}.{self.volume}"
 
 
+def _resolve_path(path: str, max_up: int = 3) -> Path:
+    """Resolve a relative path from cwd or parent dirs (notebook-friendly)."""
+    p = Path(path)
+    if p.is_absolute() or p.exists():
+        return p
+
+    current = Path.cwd()
+    for _ in range(max_up):
+        candidate = current / path
+        if candidate.exists():
+            return candidate
+        current = current.parent
+    return p
+
+
 def load_config(config_path: str = "project_config.yml", env: str = "dev") -> ProjectConfig:
     """Load project configuration.
 
@@ -75,18 +100,7 @@ def load_config(config_path: str = "project_config.yml", env: str = "dev") -> Pr
         ProjectConfig instance
 
     """
-    # Handle relative paths from notebooks
-    if not Path(config_path).is_absolute():
-        # Try to find config in parent directories
-        current = Path.cwd()
-        for _ in range(3):  # Search up to 3 levels
-            candidate = current / config_path
-            if candidate.exists():
-                config_path = str(candidate)
-                break
-            current = current.parent
-
-    return ProjectConfig.from_yaml(config_path, env)
+    return ProjectConfig.from_yaml(str(_resolve_path(config_path)), env)
 
 
 def get_env() -> str:
@@ -97,3 +111,32 @@ def get_env() -> str:
 
     """
     return os.getenv("ENV", "dev")
+
+
+class RegulatorySource(BaseModel):
+    """Regulatory source model."""
+
+    doc_id: str
+    title: str
+    url: str
+    description: str | None = None
+    agency: str | None = None
+    status: str | None = None
+    topics: list[str] = []
+    issued: str | None = None
+    superseded_by: str | None = None
+
+
+def load_regulatory_sources(path: str = "regulatory_sources.yml") -> list[RegulatorySource]:
+    """Load regulatory PDF sources from a YAML file.
+
+    Args:
+        path: Path to the regulatory sources YAML file.
+
+    Returns:
+        List of RegulatorySource records.
+
+    """
+    with open(_resolve_path(path)) as f:
+        data = yaml.safe_load(f)
+    return [RegulatorySource(**item) for item in data["sources"]]

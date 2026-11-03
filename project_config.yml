@@ -12,6 +12,7 @@ dev:
   catalog: "llmops_dev"
   schema: "lennon_jcruz"
   volume: "arxiv_files"
+  model_doc_volume: "mra_model_docs"
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.
   embedding_endpoint: "databricks-gte-large-en"
@@ -27,6 +28,7 @@ acc:
   catalog: "llmops_acc"
   schema: "lennon_jcruz"
   volume: "arxiv_files"
+  model_doc_volume: "mra_model_docs"
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.
   embedding_endpoint: "databricks-gte-large-en"
@@ -41,6 +43,7 @@ prd:
   catalog: "llmops_prd"
   schema: "lennon_jcruz"
   volume: "arxiv_files"
+  model_doc_volume: "mra_model_docs"
   llm_endpoint: "course_ops.gateway.chat"
   # Use the serving endpoint supported by batch ai_query and AI Search.
   embedding_endpoint: "databricks-gte-large-en"

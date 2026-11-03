@@ -14,6 +14,10 @@ class ProjectConfig(BaseModel):
     catalog: str = Field(..., description="Unity Catalog name")
     db_schema: str = Field(..., description="Schema name", alias="schema")
     volume: str = Field(..., description="Volume name")
+    model_doc_volume: str = Field(
+        ...,
+        description="UC volume for per-run Markdown model documentation",
+    )
     llm_endpoint: str = Field(..., description="AI Gateway chat model service name")
     embedding_endpoint: str = Field(
         ..., description="Embedding serving endpoint for ai_query, AI Search and model resources"

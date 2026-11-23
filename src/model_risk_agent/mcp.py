@@ -3,7 +3,6 @@
 from collections.abc import Callable
 
 from databricks.sdk import WorkspaceClient
-from databricks_mcp import DatabricksMCPClient
 from pydantic import BaseModel
 
 
@@ -37,6 +36,8 @@ def create_managed_exec_fn(server_url: str, tool_name: str, w: WorkspaceClient) 
     """
 
     def exec_fn(**kwargs):
+        from databricks_mcp import DatabricksMCPClient
+
         client = DatabricksMCPClient(server_url=server_url, workspace_client=w)
         response = client.call_tool(tool_name, kwargs)
         return "".join([c.text for c in response.content])
@@ -54,6 +55,8 @@ async def create_mcp_tools(w: WorkspaceClient, url_list: list[str]) -> list[Tool
     Returns:
         List of ToolInfo objects
     """
+    from databricks_mcp import DatabricksMCPClient
+
     tools = []
     for server_url in url_list:
         mcp_client = DatabricksMCPClient(server_url=server_url, workspace_client=w)

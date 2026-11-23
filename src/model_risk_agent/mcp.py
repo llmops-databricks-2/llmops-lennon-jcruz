@@ -13,6 +13,7 @@ class ToolInfo(BaseModel):
         name: Tool name
         spec: JSON description of the tool (OpenAI Responses format)
         exec_fn: Function that implements the tool logic
+
     """
 
     name: str
@@ -20,6 +21,8 @@ class ToolInfo(BaseModel):
     exec_fn: Callable
 
     class Config:
+        """Pydantic config allowing non-JSON ``exec_fn`` callables."""
+
         arbitrary_types_allowed = True
 
 
@@ -27,15 +30,16 @@ def create_managed_exec_fn(server_url: str, tool_name: str, w: WorkspaceClient) 
     """Create an execution function for an MCP tool.
 
     Args:
-        server_url: MCP server URL
-        tool_name: Name of the tool
-        w: Databricks workspace client
+        server_url: MCP server URL.
+        tool_name: Name of the tool.
+        w: Databricks workspace client.
 
     Returns:
-        Callable that executes the tool
+        Callable that executes the tool.
+
     """
 
-    def exec_fn(**kwargs):
+    def exec_fn(**kwargs: object) -> str:
         from databricks_mcp import DatabricksMCPClient
 
         client = DatabricksMCPClient(server_url=server_url, workspace_client=w)
@@ -49,11 +53,12 @@ async def create_mcp_tools(w: WorkspaceClient, url_list: list[str]) -> list[Tool
     """Create tools from MCP servers.
 
     Args:
-        w: Databricks workspace client
-        url_list: List of MCP server URLs
+        w: Databricks workspace client.
+        url_list: List of MCP server URLs.
 
     Returns:
-        List of ToolInfo objects
+        List of ToolInfo objects.
+
     """
     from databricks_mcp import DatabricksMCPClient
 

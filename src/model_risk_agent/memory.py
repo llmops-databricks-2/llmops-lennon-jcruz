@@ -12,6 +12,8 @@ from loguru import logger
 
 
 class LakebaseMemory:
+    """Persist and reload chat messages in Lakebase Postgres by session id."""
+
     def __init__(
         self,
         project_id: str,
@@ -19,6 +21,14 @@ class LakebaseMemory:
         workspace: WorkspaceClient | None = None,
         table_name: str = "session_messages",
     ) -> None:
+        """Create a memory helper for one Lakebase project.
+
+        Args:
+            project_id: Lakebase project id from project config.
+            workspace: Optional workspace client; created if omitted.
+            table_name: Postgres table that stores session rows.
+
+        """
         self.project_id = project_id
         self.workspace = workspace or WorkspaceClient()
         self.table_name = table_name
@@ -31,18 +41,15 @@ class LakebaseMemory:
         endpoint = next(iter(pg.list_endpoints(parent=branch.name)))
         host = endpoint.status.hosts.host
         cred = pg.generate_database_credential(endpoint=endpoint.name)
-        user = urllib.parse.quote_plus(
-            os.environ.get("DATABRICKS_CLIENT_ID") or w.current_user.me().user_name
-        )
-        return (
-            f"postgresql://{user}:{cred.token}@{host}:5432/"
-            "databricks_postgres?sslmode=require"
-        )
+        user = urllib.parse.quote_plus(os.environ.get("DATABRICKS_CLIENT_ID") or w.current_user.me().user_name)
+        return f"postgresql://{user}:{cred.token}@{host}:5432/databricks_postgres?sslmode=require"
 
     def connection(self) -> psycopg.Connection:
+        """Open a Lakebase connection with a short-lived credential."""
         return psycopg.connect(self._conn_string())
 
     def ensure_schema(self) -> None:
+        """Create the session messages table and index if missing."""
         with self.connection() as conn:
             conn.execute(
                 f"""
@@ -63,6 +70,13 @@ class LakebaseMemory:
         logger.info("session memory table ready")
 
     def save_messages(self, session_id: str, messages: list[dict]) -> None:
+        """Append messages for a session.
+
+        Args:
+            session_id: Conversation thread id.
+            messages: Role/content dicts to store as JSONB.
+
+        """
         logger.info(
             "memory save session_id={} n_messages={} table={}",
             session_id,
@@ -72,12 +86,20 @@ class LakebaseMemory:
         with self.connection() as conn:
             for msg in messages:
                 conn.execute(
-                    f"INSERT INTO {self.table_name} (session_id, message_data) "
-                    "VALUES (%s, %s)",
+                    f"INSERT INTO {self.table_name} (session_id, message_data) VALUES (%s, %s)",
                     (session_id, json.dumps(msg)),
                 )
 
     def load_messages(self, session_id: str) -> list[dict]:
+        """Load messages for a session in chronological order.
+
+        Args:
+            session_id: Conversation thread id.
+
+        Returns:
+            List of message dicts previously saved for this session.
+
+        """
         with self.connection() as conn:
             rows = conn.execute(
                 f"""

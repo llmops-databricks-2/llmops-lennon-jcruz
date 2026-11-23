@@ -1,4 +1,7 @@
+"""Custom search tools for the Model Risk Analyst agent."""
+
 import json
+
 from model_risk_agent.mcp import ToolInfo
 from model_risk_agent.vector_search import LakebasePgVectorManager
 
@@ -26,10 +29,7 @@ SEARCH_ACADEMIC_SPEC = {
     "type": "function",
     "function": {
         "name": "search_academic",
-        "description": (
-            "Search academic papers only (corpus=academic). "
-            "Use for academic research."
-        ),
+        "description": ("Search academic papers only (corpus=academic). Use for academic research."),
         "parameters": {
             "type": "object",
             "properties": {
@@ -65,20 +65,33 @@ HYBRID_SEARCH_MRA_SPEC = {
     },
 }
 
+
 def _format_hits(rows: list[dict]) -> str:
     hits = []
     for row in rows:
-        hits.append({
-            "id": row.get("id"),
-            "title": row.get("title"),
-            "corpus": row.get("corpus"),
-            "score": round(float(row.get("score", 0.0)), 4),
-            "excerpt": (row.get("text") or "")[:300],
-        })
+        hits.append(
+            {
+                "id": row.get("id"),
+                "title": row.get("title"),
+                "corpus": row.get("corpus"),
+                "score": round(float(row.get("score", 0.0)), 4),
+                "excerpt": (row.get("text") or "")[:300],
+            }
+        )
     return json.dumps(hits, indent=2)
 
 
 def build_mra_tools(pgvector: LakebasePgVectorManager) -> list[ToolInfo]:
+    """Build regulatory, academic, and hybrid search tools bound to ``pgvector``.
+
+    Args:
+        pgvector: Lakebase pgvector manager used by the tool closures.
+
+    Returns:
+        List of ``ToolInfo`` entries ready for the agent registry.
+
+    """
+
     def search_regulatory(query: str, num_results: int = 5) -> str:
         rows = pgvector.search(query=query, num_results=num_results, corpus="regulatory")
         return _format_hits(rows)

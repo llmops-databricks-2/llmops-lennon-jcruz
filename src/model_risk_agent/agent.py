@@ -1,3 +1,5 @@
+"""Model Risk Analyst tool-calling agent and assess entrypoint."""
+
 from __future__ import annotations
 
 import json
@@ -23,6 +25,8 @@ from model_risk_agent.vector_search import LakebasePgVectorManager
 
 @dataclass(frozen=True)
 class AssessmentResult:
+    """Outcome of one model-risk assessment run."""
+
     run_id: str
     model_name: str
     markdown_path: str
@@ -72,6 +76,18 @@ class ModelRiskAgent:
         max_iterations: int = 6,
         max_tool_rounds: int = 3,
     ) -> str:
+        """Run the gateway tool loop until a text answer or max iterations.
+
+        Args:
+            user_message: Current user turn (assessment prompt or follow-up).
+            previous_messages: Optional prior user/assistant turns from memory.
+            max_iterations: Maximum LLM calls for this turn.
+            max_tool_rounds: Maximum rounds that may request tools.
+
+        Returns:
+            Final assistant text (assessment report or follow-up answer).
+
+        """
         messages: list[dict] = [{"role": "system", "content": self.system_prompt}]
         if previous_messages:
             messages.extend(previous_messages)
@@ -189,6 +205,23 @@ def assess(
     max_iterations: int = 6,
     session_id: str | None = None,
 ) -> AssessmentResult:
+    """Persist (or reuse) model docs, run the agent, and optionally save memory.
+
+    Args:
+        config: Project configuration for the active environment.
+        markdown: Model documentation Markdown, or empty to reuse a prior run.
+        model_name: Display name used in volume paths and the prompt.
+        run_id: Assessment id; required when ``markdown`` is empty.
+        question: Optional override for the assessment task text.
+        workspace: Optional Databricks workspace client.
+        max_tool_rounds: Cap on tool-calling rounds inside ``chat``.
+        max_iterations: Cap on LLM iterations inside ``chat``.
+        session_id: When set, load/save Lakebase session messages.
+
+    Returns:
+        Assessment report, parsed decision, and volume path metadata.
+
+    """
     run_id = run_id or str(uuid4())
     w = workspace or WorkspaceClient()
     store = ModelDocStore(config)

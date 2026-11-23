@@ -33,7 +33,19 @@ def build_assessment_user_message(
     deck_md: str,
     question: str | None = None,
 ) -> str:
+    """Build the user message that carries deck, metadata, and report template.
 
+    Args:
+        run_id: Assessment run identifier.
+        model_name: Model name for the prompt header.
+        volume_path: UC volume path of the persisted deck.
+        deck_md: Model documentation Markdown body.
+        question: Optional task override; default is a US retail PD assessment.
+
+    Returns:
+        Full user message string for the agent chat turn.
+
+    """
     task = question or (
         "Assess this model for US retail PD use before production. "
         "Search regulatory guidance (and academic if needed) to support findings."

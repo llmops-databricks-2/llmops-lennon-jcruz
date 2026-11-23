@@ -1,26 +1,30 @@
+"""Persist per-run model documentation Markdown on a Unity Catalog volume."""
+
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
+
 from model_risk_agent.config import ProjectConfig
 
 _SAFE_RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
+
 @dataclass(frozen=True)
 class PersistedModelDoc:
     """Result of writing one assessment's model documentation."""
+
     run_id: str
     model_name: str
     markdown_path: str
     runs_dir: str
+
 
 class ModelDocStore:
     """Persist per-run Markdown model documentation on a UC volume (audit artifact)."""
 
     def __init__(self, config: ProjectConfig, *, volume_root: str | None = None) -> None:
         self.config = config
-        self.volume_root = volume_root or (
-            f"/Volumes/{config.catalog}/{config.schema}/{config.model_doc_volume}"
-        )
+        self.volume_root = volume_root or (f"/Volumes/{config.catalog}/{config.schema}/{config.model_doc_volume}")
 
     @property
     def runs_dir(self) -> Path:
@@ -34,36 +38,34 @@ class ModelDocStore:
         return self.runs_dir / f"{safe_model}_{run_id}.md"
 
     def persist(
-            self,
-            run_id: str,
-            markdown: str,
-            *,
-            model_name: str,
-        ) -> PersistedModelDoc:
-            """Write Markdown for one assessment and return the volume path."""
-            text = (markdown or "").strip()
-            if not text:
-                raise ValueError("model documentation Markdown is required")
+        self,
+        run_id: str,
+        markdown: str,
+        *,
+        model_name: str,
+    ) -> PersistedModelDoc:
+        """Write Markdown for one assessment and return the volume path."""
+        text = (markdown or "").strip()
+        if not text:
+            raise ValueError("model documentation Markdown is required")
 
-            if not (model_name or "").strip():
-                raise ValueError("model_name is required")
+        if not (model_name or "").strip():
+            raise ValueError("model_name is required")
 
-            # Reject accidental path-as-content (common notebook mistake)
-            if text.startswith("/Volumes/") or text.startswith("dbfs:"):
-                raise ValueError(
-                    "markdown looks like a path; use persist_from_path(...) instead"
-                )
+        # Reject accidental path-as-content (common notebook mistake)
+        if text.startswith("/Volumes/") or text.startswith("dbfs:"):
+            raise ValueError("markdown looks like a path; use persist_from_path(...) instead")
 
-            self.runs_dir.mkdir(parents=True, exist_ok=True)
-            md_path = self.artifact_path(model_name, run_id)
-            md_path.write_text(text, encoding="utf-8")
+        self.runs_dir.mkdir(parents=True, exist_ok=True)
+        md_path = self.artifact_path(model_name, run_id)
+        md_path.write_text(text, encoding="utf-8")
 
-            return PersistedModelDoc(
-                run_id=run_id,
-                model_name=self._safe_model_name(model_name),
-                markdown_path=str(md_path),
-                runs_dir=str(self.runs_dir),
-            )
+        return PersistedModelDoc(
+            run_id=run_id,
+            model_name=self._safe_model_name(model_name),
+            markdown_path=str(md_path),
+            runs_dir=str(self.runs_dir),
+        )
 
     def read_markdown(self, model_name: str, run_id: str) -> str:
         """Read a previously persisted model doc."""
@@ -108,6 +110,4 @@ class ModelDocStore:
     @staticmethod
     def _validate_run_id(run_id: str) -> None:
         if not run_id or not _SAFE_RUN_ID.match(run_id):
-            raise ValueError(
-                "run_id must be 1–128 chars: letters, digits, . _ - (no path separators)"
-            )
+            raise ValueError("run_id must be 1–128 chars: letters, digits, . _ - (no path separators)")

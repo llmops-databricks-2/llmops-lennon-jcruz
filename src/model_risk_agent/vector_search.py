@@ -39,7 +39,7 @@ class LakebasePgVectorManager:
         self.catalog = config.catalog if config else catalog
         self.schema = config.schema if config else schema
         self.lakebase_project_id = config.lakebase_project_id if config else lakebase_project_id
-        self.embedding_model = embedding_model or (config.embedding_endpoint if config else None)
+        self.embedding_model = embedding_model or (config.embedding_service if config else None)
         if not self.catalog or not self.schema or not self.lakebase_project_id:
             raise ValueError("catalog, schema, and lakebase_project_id are required")
         if not self.embedding_model:

@@ -1,0 +1,29 @@
+# Smoke job for the traced ModelRiskAgent: installs the wheel, runs assess() on a
+# volume model deck, and asserts traces appear in the env experiment path.
+# Named with the target so concurrent deploys never collide.
+resources:
+  jobs:
+    mra-agent-trace:
+      name: job-mra-agent-trace-lennon-jcruz-${bundle.target}
+      budget_policy_id: "af9e2850-ed3a-3d2d-9cd0-fe618692bb3f"
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "6"
+            dependencies:
+              - ../dist/*.whl
+              # databricks-mcp 0.4 needs mcp 1.x; pin below 2 to avoid LiveSpan import break
+              - "mcp>=1.13,<2"
+              # serverless has no system libpq; force the binary wheel (avoids SIGABRT on import)
+              - "psycopg[binary]==3.3.2"
+
+      tasks:
+        - task_key: run-agent-trace
+          environment_key: default
+          notebook_task:
+            notebook_path: deployment_notebooks/mra_agent_trace.py
+            base_parameters:
+              env: ${bundle.target}
+              model_doc_path: /Volumes/llmops_dev/lennon_jcruz/mra_model_docs/tests/model_deck.md
+              model_name: Give Me Some Credit retail PD
+              max_tool_rounds: "5"

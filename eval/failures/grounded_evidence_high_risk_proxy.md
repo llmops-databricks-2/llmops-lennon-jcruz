@@ -119,4 +119,35 @@ Counted `execute_tool` → `tool_name` on the same two eval runs (excluding `hyb
 | Before fix `17254066…` (5 cases, 13 calls) | **12 (92%)** | **1 (8%)** | 0 |
 | After fix `3e8be9a8…` (6 cases, 14 calls) | **11 (79%)** | **3 (21%)** | 0 |
 
-**Takeaway:** earlier runs were almost only regulatory. After the prompt/Evidence work, academic shows up more often (e.g. on `High_Risk_Proxy_PD`, `Solid_Retail_PD_v1`) but regulatory still dominates. The RETRIEVER-span change mainly improves observability for judges; the mix shift is mostly **agent tool-choice / prompt** behavior, not automatic load-balancing across corpora.
+**Takeaway (at that point):** earlier runs were almost only regulatory. After the Evidence/RETRIEVER work, academic showed up more but regulatory still dominated. Mix is mainly **agent tool-choice / prompt** behavior.
+
+---
+
+## Follow-up — explicit tool-choice in `SYSTEM_PROMPT`
+
+Added prompt rules: always `search_regulatory` for US MRM/SR/OCC; also `search_academic` at least once when the deck covers methodology, validation metrics, fairness, or PD modeling; prefer specialized tools over `hybrid_search_mra`.
+
+**Re-eval run:** `56158c4c65a04763b96b0636154a7297` (job run `899006725656816`)
+
+### Tool mix across runs
+
+| Eval run | `search_regulatory` | `search_academic` | hybrid |
+|----------|---------------------|-------------------|--------|
+| Baseline `17254066…` (13 calls) | **12 (92%)** | **1 (8%)** | 0 |
+| Evidence/RETRIEVER `3e8be9a8…` (14 calls) | **11 (79%)** | **3 (21%)** | 0 |
+| Tool-choice prompt `56158c4c…` (13 calls) | **8 (62%)** | **5 (38%)** | 0 |
+
+After the tool-choice prompt, academic appeared on **all 6 cases**.
+
+### Scorer metrics across runs
+
+| Scorer | Baseline `17254066…` | Evidence fix `3e8be9a8…` | Tool-choice `56158c4c…` |
+|--------|----------------------|--------------------------|-------------------------|
+| `decision_label_check` | 1.0 | 1.0 | 1.0 |
+| `report_structure_check` | 1.0 | 1.0 | 1.0 |
+| `decision_policy` | 1.0 | 1.0 | 1.0 |
+| `report_sections` | 1.0 | 1.0 | **0.83** |
+| `grounded_evidence` | **0.0** | **0.17** | **0.33** |
+| `retrieval_groundedness` | — | 0.05 | **0.0** |
+
+**Takeaway:** tool-choice prompt clearly fixed the regulatory/academic imbalance. `grounded_evidence` kept improving; `report_sections` / `retrieval_groundedness` did not — remaining quality work is claim–chunk alignment and section completeness, not tool routing.

@@ -2,6 +2,9 @@
 
 import json
 
+import mlflow
+from mlflow.entities import Document, SpanType
+
 from model_risk_agent.mcp import ToolInfo
 from model_risk_agent.vector_search import LakebasePgVectorManager
 
@@ -81,6 +84,33 @@ def _format_hits(rows: list[dict]) -> str:
     return json.dumps(hits, indent=2)
 
 
+def _rows_as_documents(rows: list[dict]) -> list[Document]:
+    """Convert pgvector rows into MLflow retriever Documents for tracing/judges."""
+    docs: list[Document] = []
+    for row in rows:
+        docs.append(
+            Document(
+                id=str(row.get("id") or ""),
+                page_content=(row.get("text") or "")[:1000],
+                metadata={
+                    "title": row.get("title"),
+                    "corpus": row.get("corpus"),
+                    "score": float(row.get("score") or 0.0),
+                    "paper_id": row.get("paper_id"),
+                },
+            )
+        )
+    return docs
+
+
+def _traced_search(span_name: str, rows: list[dict]) -> str:
+    """Emit a RETRIEVER span (for RetrievalGroundedness) and return tool JSON."""
+    with mlflow.start_span(name=span_name, span_type=SpanType.RETRIEVER) as span:
+        span.set_inputs({"hit_count": len(rows)})
+        span.set_outputs(_rows_as_documents(rows))
+        return _format_hits(rows)
+
+
 def build_mra_tools(pgvector: LakebasePgVectorManager) -> list[ToolInfo]:
     """Build regulatory, academic, and hybrid search tools bound to ``pgvector``.
 
@@ -94,15 +124,15 @@ def build_mra_tools(pgvector: LakebasePgVectorManager) -> list[ToolInfo]:
 
     def search_regulatory(query: str, num_results: int = 5) -> str:
         rows = pgvector.search(query=query, num_results=num_results, corpus="regulatory")
-        return _format_hits(rows)
+        return _traced_search("search_regulatory", rows)
 
     def search_academic(query: str, num_results: int = 5) -> str:
         rows = pgvector.search(query=query, num_results=num_results, corpus="academic")
-        return _format_hits(rows)
+        return _traced_search("search_academic", rows)
 
     def hybrid_search_mra(query: str, num_results: int = 5, corpus: str | None = None) -> str:
         rows = pgvector.hybrid_search(query=query, num_results=num_results, corpus=corpus)
-        return _format_hits(rows)
+        return _traced_search("hybrid_search_mra", rows)
 
     return [
         ToolInfo(name="search_regulatory", spec=SEARCH_REGULATORY_SPEC, exec_fn=search_regulatory),

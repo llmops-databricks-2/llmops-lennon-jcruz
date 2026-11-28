@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from uuid import uuid4
 
+import mlflow
 from databricks.sdk import WorkspaceClient
 from loguru import logger
+from mlflow.entities import SpanType
 from openai import OpenAI
+from openai.types.chat import ChatCompletion
 
 from model_risk_agent.config import ProjectConfig
 from model_risk_agent.mcp import ToolInfo
@@ -62,12 +66,28 @@ class ModelRiskAgent:
         """Get tool specifications for the LLM."""
         return [tool.spec for tool in self._tools_dict.values()]
 
+    @mlflow.trace(span_type=SpanType.TOOL)
     def execute_tool(self, tool_name: str, args: dict) -> str:
         """Execute a tool by name."""
         if tool_name not in self._tools_dict:
             raise ValueError(f"Unknown tool: {tool_name}")
         return self._tools_dict[tool_name].exec_fn(**args)
 
+    @mlflow.trace(span_type=SpanType.LLM, name="gateway_chat")
+    def _call_llm(
+        self,
+        messages: list[dict],
+        *,
+        tools: list[dict] | None = None,
+    ) -> ChatCompletion:
+        """Call the AI Gateway chat completions endpoint."""
+        return self._client.chat.completions.create(
+            model=self.llm_endpoint,
+            messages=messages,
+            tools=tools,
+        )
+
+    @mlflow.trace(span_type=SpanType.CHAIN)
     def chat(
         self,
         user_message: str,
@@ -75,6 +95,8 @@ class ModelRiskAgent:
         previous_messages: list[dict] | None = None,
         max_iterations: int = 6,
         max_tool_rounds: int = 3,
+        session_id: str | None = None,
+        run_id: str | None = None,
     ) -> str:
         """Run the gateway tool loop until a text answer or max iterations.
 
@@ -83,6 +105,8 @@ class ModelRiskAgent:
             previous_messages: Optional prior user/assistant turns from memory.
             max_iterations: Maximum LLM calls for this turn.
             max_tool_rounds: Maximum rounds that may request tools.
+            session_id: Optional session id for trace metadata.
+            run_id: Optional assessment run id for trace tags.
 
         Returns:
             Final assistant text (assessment report or follow-up answer).
@@ -100,6 +124,19 @@ class ModelRiskAgent:
             max_tool_rounds,
         )
 
+        trace_tags = {
+            "git_sha": os.getenv("GIT_SHA", "local"),
+            "deployment_name": os.getenv(
+                "DATABRICKS_APP_NAME",
+                os.getenv("MODEL_SERVING_ENDPOINT_NAME", "local"),
+            ),
+            "model_version": os.getenv("MODEL_VERSION", "local"),
+        }
+        if run_id:
+            trace_tags["run_id"] = run_id
+        metadata = {"mlflow.trace.session": session_id} if session_id else {}
+        mlflow.update_current_trace(tags=trace_tags, metadata=metadata)
+
         tool_rounds = 0
         for iteration in range(max_iterations):
             use_tools = tool_rounds < max_tool_rounds
@@ -109,9 +146,8 @@ class ModelRiskAgent:
                 tool_rounds,
                 use_tools,
             )
-            response = self._client.chat.completions.create(
-                model=self.llm_endpoint,
-                messages=messages,
+            response = self._call_llm(
+                messages,
                 tools=self.get_tool_specs() if use_tools else None,
             )
             assistant_message = response.choices[0].message
@@ -193,6 +229,23 @@ class ModelRiskAgent:
         return "Max iterations reached."
 
 
+@mlflow.trace(span_type=SpanType.RETRIEVER, name="memory_load")
+def _load_session_memory(memory: LakebaseMemory, session_id: str) -> list[dict]:
+    """Load prior messages for a session (traced)."""
+    return memory.load_messages(session_id)
+
+
+@mlflow.trace(span_type=SpanType.CHAIN, name="memory_save")
+def _save_session_memory(
+    memory: LakebaseMemory,
+    session_id: str,
+    messages: list[dict],
+) -> None:
+    """Save messages for a session (traced)."""
+    memory.save_messages(session_id, messages)
+
+
+@mlflow.trace(span_type=SpanType.AGENT)
 def assess(
     config: ProjectConfig,
     markdown: str,
@@ -222,6 +275,8 @@ def assess(
         Assessment report, parsed decision, and volume path metadata.
 
     """
+    mlflow.set_experiment(config.experiment_path)
+
     run_id = run_id or str(uuid4())
     w = workspace or WorkspaceClient()
     store = ModelDocStore(config)
@@ -258,7 +313,7 @@ def assess(
     if session_id:
         memory = LakebaseMemory(config.lakebase_project_id, workspace=w)
         memory.ensure_schema()
-        history = memory.load_messages(session_id)
+        history = _load_session_memory(memory, session_id)
         logger.info(
             "session_id={} loaded {} message(s) from memory",
             session_id,
@@ -284,17 +339,46 @@ def assess(
         question=question,
     )
 
+    mlflow.update_current_trace(
+        tags={
+            "run_id": persisted.run_id,
+            "model_name": persisted.model_name,
+            "git_sha": os.getenv("GIT_SHA", "local"),
+            "deployment_name": os.getenv(
+                "DATABRICKS_APP_NAME",
+                os.getenv("MODEL_SERVING_ENDPOINT_NAME", "local"),
+            ),
+            "model_version": os.getenv("MODEL_VERSION", "local"),
+        },
+        metadata={
+            **({"mlflow.trace.session": session_id} if session_id else {}),
+            "model_doc_volume_path": persisted.markdown_path,
+        },
+    )
+
     report = agent.chat(
         user_message,
         previous_messages=history,
         max_iterations=max_iterations,
         max_tool_rounds=max_tool_rounds,
+        session_id=session_id,
+        run_id=persisted.run_id,
     )
     decision = parse_decision(report)
     logger.info("assessment decision={} report_chars={}", decision, len(report or ""))
 
+    mlflow.update_current_trace(
+        tags={
+            "run_id": persisted.run_id,
+            "model_name": persisted.model_name,
+            "decision": decision or "unknown",
+        },
+        metadata={"model_doc_volume_path": persisted.markdown_path},
+    )
+
     if memory and session_id:
-        memory.save_messages(
+        _save_session_memory(
+            memory,
             session_id,
             [
                 {"role": "user", "content": user_message},

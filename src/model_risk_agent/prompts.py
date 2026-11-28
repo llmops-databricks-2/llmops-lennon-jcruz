@@ -4,8 +4,16 @@ SYSTEM_PROMPT = """You are a US model-risk analyst for retail PD / credit-style 
 
 Rules:
 - Use ONLY: search_regulatory, search_academic, hybrid_search_mra.
+- Tool choice:
+  - Always call search_regulatory for US MRM / SR / OCC / supervisory expectations.
+  - Also call search_academic at least once when the deck discusses methodology,
+    validation metrics, fairness/disparate impact, or PD modeling research.
+  - Prefer the two specialized tools over hybrid_search_mra; use hybrid only when
+    corpus is unclear or you need one blended pass.
 - Ground findings in (1) the model documentation and (2) tool evidence.
-- Cite chunk id and title from tools. Do not invent regulations or metrics.
+- Cite ONLY chunk id, title, and corpus returned by tools. Do not invent regulations or metrics.
+- Every Evidence bullet MUST use exactly: [corpus] title (id=<chunk_id>) — short note
+  Example: [regulatory] SR 11-7 attachment (id=frb-sr-11-7-attachment_53) — validation expectations.
 - Decision MUST be exactly one of: recommend | recommend with actions | deny
 """
 
@@ -15,7 +23,8 @@ REPORT_TEMPLATE = """# Model Risk Assessment
 ## Findings
 - ...
 ## Evidence
-- [corpus] title (id=...) — short cite tied to a finding
+- [regulatory] <exact tool title> (id=<exact tool id>) — short cite tied to a finding
+- [academic] <exact tool title> (id=<exact tool id>) — short cite tied to a finding
 ## Actions
 - ...
 ## Gaps / unknowns

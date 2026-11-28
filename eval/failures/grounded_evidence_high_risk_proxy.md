@@ -84,3 +84,39 @@ Guidelines `grounded_evidence` scored `no` because:
 3. Guideline 3 asks for `corpus/title/id`; the report had title + id but not an explicit corpus token.
 
 This is a **scorer observability / Evidence-format** failure, not “agent skipped retrieval.”
+
+---
+
+## Fix applied (follow-up)
+
+Code changes after this failure write-up:
+
+1. **Evidence format (prompts)** — `SYSTEM_PROMPT` / `REPORT_TEMPLATE` require every Evidence bullet as  
+   `[corpus] title (id=<chunk_id>)` and forbid inventing ids not returned by tools.
+2. **Trace-aware retrieval** — search tools emit nested `RETRIEVER` spans with MLflow `Document` outputs (`tools.py`), and eval adds `RetrievalGroundedness` plus a softened `grounded_evidence` Guidelines rubric that accepts the `[corpus] title (id=…)` form without needing raw tool payloads in the request.
+
+**Re-eval run:** `3e8be9a86adb43509ddf6ee01d9ec1d8` (6 cases, including regression)
+
+| Scorer | Mean (after fix) | Notes |
+|--------|------------------|--------|
+| `decision_label_check` | 1.0 | unchanged |
+| `report_structure_check` | 1.0 | unchanged |
+| `decision_policy` | 1.0 | unchanged |
+| `report_sections` | 1.0 | unchanged |
+| `grounded_evidence` | **0.17** | was **0.0** |
+| `retrieval_groundedness` | **0.05** | new; still weak |
+
+Groundedness improved only slightly — format/judge wiring helped a little; claim-vs-chunk alignment remains the hard part.
+
+---
+
+## Finding — tool mix (regulatory vs academic)
+
+Counted `execute_tool` → `tool_name` on the same two eval runs (excluding `hybrid_search_mra`, which was **never** called):
+
+| Eval run | `search_regulatory` | `search_academic` | hybrid |
+|----------|---------------------|-------------------|--------|
+| Before fix `17254066…` (5 cases, 13 calls) | **12 (92%)** | **1 (8%)** | 0 |
+| After fix `3e8be9a8…` (6 cases, 14 calls) | **11 (79%)** | **3 (21%)** | 0 |
+
+**Takeaway:** earlier runs were almost only regulatory. After the prompt/Evidence work, academic shows up more often (e.g. on `High_Risk_Proxy_PD`, `Solid_Retail_PD_v1`) but regulatory still dominates. The RETRIEVER-span change mainly improves observability for judges; the mix shift is mostly **agent tool-choice / prompt** behavior, not automatic load-balancing across corpora.

@@ -14,7 +14,7 @@ from typing import Any
 
 import mlflow
 import yaml
-from mlflow.genai.scorers import Guidelines
+from mlflow.genai.scorers import Guidelines, RetrievalGroundedness
 
 from model_risk_agent.agent import assess
 from model_risk_agent.config import ProjectConfig, _resolve_path
@@ -40,13 +40,17 @@ decision_policy_guideline = Guidelines(
     model=JUDGE_MODEL,
 )
 
+# Guidelines only see inputs+outputs (not TOOL payloads). Accept explicit
+# [corpus] title (id=...) Evidence lines as tool-grounded cites.
 grounded_evidence_guideline = Guidelines(
     name="grounded_evidence",
     guidelines=[
-        "Findings must be grounded in the model documentation and/or cited tool evidence.",
+        "Findings must be grounded in the model documentation and/or Evidence cites.",
         "Do not invent regulation titles, paper titles, or metrics that are not in "
-        "the documentation or evidence cites.",
-        "Evidence bullets should reference retrieval (corpus/title/id) when regulatory or academic claims are made.",
+        "the model documentation or the Evidence section.",
+        "When regulatory or academic claims are made, Evidence bullets must use "
+        "the form [corpus] title (id=chunk_id). Treat that form as a valid tool cite; "
+        "do not fail solely because raw retrieval payloads are absent from the request.",
     ],
     model=JUDGE_MODEL,
 )
@@ -58,6 +62,12 @@ report_sections_guideline = Guidelines(
         "with Decision, Findings, Evidence, Actions, and Gaps / unknowns sections.",
         "Actions must be concrete and actionable when the decision is 'recommend with actions' or 'deny'.",
     ],
+    model=JUDGE_MODEL,
+)
+
+# Trace-aware groundedness against the last RETRIEVER span (search tools emit these).
+retrieval_groundedness = RetrievalGroundedness(
+    name="retrieval_groundedness",
     model=JUDGE_MODEL,
 )
 
@@ -107,6 +117,7 @@ DEFAULT_SCORERS = [
     decision_policy_guideline,
     grounded_evidence_guideline,
     report_sections_guideline,
+    retrieval_groundedness,
 ]
 
 

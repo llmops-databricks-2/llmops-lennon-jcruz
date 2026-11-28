@@ -1,0 +1,27 @@
+# Evaluation job for the traced ModelRiskAgent: installs the wheel, runs
+# evaluate_agent() over eval/cases.yaml with DEFAULT_SCORERS, logs metrics.
+# Named with the target so concurrent deploys never collide.
+resources:
+  jobs:
+    mra-agent-eval:
+      name: job-mra-agent-eval-lennon-jcruz-${bundle.target}
+      budget_policy_id: "af9e2850-ed3a-3d2d-9cd0-fe618692bb3f"
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "6"
+            dependencies:
+              - ../dist/*.whl
+              - "mcp>=1.13,<2"
+              - "psycopg[binary]==3.3.2"
+
+      tasks:
+        - task_key: run-agent-eval
+          environment_key: default
+          notebook_task:
+            notebook_path: deployment_notebooks/mra_agent_eval.py
+            base_parameters:
+              env: ${bundle.target}
+              cases_path: ../../eval/cases.yaml
+              max_tool_rounds: "3"

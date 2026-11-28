@@ -1,0 +1,210 @@
+# Reviewed MRA eval dataset (Assignment 4).
+# Each case: synthetic Markdown deck + task + expected decision band + human rationale.
+# Runner / predict_fn come in a later step — do not treat this file as executable alone.
+#
+# expected_decision must be one of:
+#   recommend | recommend with actions | deny
+
+cases:
+  - case_id: solid_retail_pd_minor_gaps
+    model_name: Solid Retail PD v1
+    expected_decision: recommend with actions
+    rationale: >
+      Docs cover purpose, data, validation, and monitoring, but challenger
+      comparison and fairness cutoffs are thin — conditional approval with actions,
+      not a clean recommend or deny.
+    question: >
+      Assess this model for US retail PD use before production. Search regulatory
+      guidance (and academic if needed) to support findings.
+    markdown: |
+      # Model deck — Solid Retail PD v1
+
+      ## Purpose
+      Score retail revolving credit applicants for 12-month default probability (PD).
+      Intended use: underwriting decision support in the US; humans retain final say.
+
+      ## Data
+      - Population: US revolving applicants, 2019–2023
+      - Target: 90+ DPD within 12 months
+      - Features: bureau utilization, delinquency flags, income band, tenure
+      - Exclusions: employees, fraud-flagged apps
+
+      ## Methodology
+      Logistic regression with WOE binning. No neural nets. Challenger: gradient
+      boosting trained on the same sample; primary model preferred for explainability.
+
+      ## Validation
+      - Out-of-time AUC 0.78; KS 0.42
+      - Calibration within ±5% in top deciles
+      - Stability: PSI < 0.1 vs development on last two quarters
+
+      ## Monitoring
+      Monthly AUC/PSI dashboards; quarterly calibration review. Alert if AUC drops
+      >3pp or PSI > 0.2.
+
+      ## Known gaps
+      - Fairness: disparate-impact metrics computed for age bands only; race/ethnicity
+        not in feature set and not proxied in the report
+      - Challenger lift documented as "+0.01 AUC" without economic significance test
+
+  - case_id: thin_documentation_pd
+    model_name: Thin Docs PD
+    expected_decision: deny
+    rationale: >
+      Missing validation evidence, monitoring plan, and clear intended use —
+      documentation is too weak for production approval under SR 11-7-style MRM.
+    question: >
+      Assess this model for US retail PD use before production. Search regulatory
+      guidance (and academic if needed) to support findings.
+    markdown: |
+      # Model deck — Thin Docs PD
+
+      ## Purpose
+      Predicts credit risk somehow for loans.
+
+      ## Data
+      Some customer data from last year. Features not listed.
+
+      ## Methodology
+      "ML model" (type unspecified). Hyperparameters tuned until accuracy looked good
+      on the training set.
+
+      ## Validation
+      Training accuracy 92%. No holdout or out-of-time results provided.
+
+      ## Monitoring
+      None described.
+
+  - case_id: high_risk_unfair_features
+    model_name: High Risk Proxy PD
+    expected_decision: deny
+    rationale: >
+      Uses prohibited/proxy-sensitive attributes, no fairness testing, and trains
+      without out-of-time validation — unfit for US retail credit production.
+    question: >
+      Assess this model for US retail PD use before production. Search regulatory
+      guidance (and academic if needed) to support findings.
+    markdown: |
+      # Model deck — High Risk Proxy PD
+
+      ## Purpose
+      Automated approve/deny for US unsecured personal loans (no human override).
+
+      ## Data
+      Features include ZIP code, first name, and "neighborhood income score"
+      derived from census tract. Target: charge-off in 18 months.
+
+      ## Methodology
+      Black-box ensemble. No reason codes. Threshold set to maximize approval volume.
+
+      ## Validation
+      In-sample only. No adverse-action reason testing. No disparate-impact analysis.
+
+      ## Monitoring
+      Annual refresh planned; no ongoing performance or fairness monitoring.
+
+  - case_id: well_controlled_pd
+    model_name: Controlled Retail PD
+    expected_decision: recommend
+    rationale: >
+      Clear use case, documented challenger, OOT validation, monitoring, and
+      fairness testing with mitigations — supports an unqualified recommend if
+      the agent finds corroborating regulatory expectations.
+    question: >
+      Assess this model for US retail PD use before production. Search regulatory
+      guidance (and academic if needed) to support findings.
+    markdown: |
+      # Model deck — Controlled Retail PD
+
+      ## Purpose
+      Rank-order US credit-card applicants by 12-month PD for limit assignment.
+      Decisioning system applies policy overlays; model is not sole deny reason.
+
+      ## Data
+      Bureau + internal repayment history. Explicitly excludes race, ethnicity,
+      gender, age, marital status, and ZIP. Proxy review completed (VIF / correlation
+      screens vs protected-class proxies).
+
+      ## Methodology
+      Scorecard (logistic + WOE). Challenger GBM; primary chosen after economic
+      capital comparison. Adverse-action reason codes mapped to top features.
+
+      ## Validation
+      - OOT AUC 0.81; KS 0.45; calibration slope 0.97
+      - Segment performance by product and channel within tolerance
+      - Fairness: adverse-impact ratio > 0.8 for monitored groups after overlays
+
+      ## Monitoring
+      Weekly score distribution; monthly AUC/PSI/calibration; quarterly fairness
+      dashboard with documented escalation to Model Risk.
+
+      ## Governance
+      Model inventory ID MR-PD-042. Last independent validation: 2025-Q4, no
+      material findings open.
+
+  - case_id: missing_monitoring_only
+    model_name: No Monitor PD
+    expected_decision: recommend with actions
+    rationale: >
+      Core development and OOT validation look acceptable, but production monitoring
+      and issue escalation are absent — typical conditional approve with required
+      actions rather than deny or clean recommend.
+    question: >
+      Assess this model for US retail PD use before production. Search regulatory
+      guidance (and academic if needed) to support findings.
+    markdown: |
+      # Model deck — No Monitor PD
+
+      ## Purpose
+      US retail auto-loan PD for pricing support (human underwriter final).
+
+      ## Data
+      Application + bureau features; protected classes excluded. Development sample
+      2018–2022; OOT 2023H1.
+
+      ## Methodology
+      Gradient-boosted trees with SHAP reason codes. Challenger logistic scorecard.
+
+      ## Validation
+      OOT AUC 0.79; Brier 0.11; stability PSI 0.08 vs development.
+
+      ## Monitoring
+      Not yet implemented. Plan says "TBD before go-live."
+
+      ## Gaps
+      No alert thresholds, no owner for ongoing monitoring, no back-testing cadence.
+
+  # Regression: grounded_evidence mean=0.0 on eval run 1725406606074df89e0fab486990577c
+  # (see eval/failures/grounded_evidence_high_risk_proxy.md).
+  - case_id: high_risk_evidence_format_regression
+    model_name: High Risk Proxy PD
+    expected_decision: deny
+    rationale: >
+      REGRESSION for grounded_evidence failures where TOOL spans returned real
+      regulatory chunks (e.g. frb-sr-11-7-attachment_53) but Evidence bullets omitted
+      an explicit corpus token. Judge Guidelines only see inputs+outputs, so missing
+      [regulatory] … (id=…) looks ungrounded. Expect deny and Evidence lines that
+      name corpus, title, and chunk id.
+    question: >
+      Assess this model for US retail PD use before production. Search regulatory
+      guidance (and academic if needed) to support findings. In the Evidence section,
+      every cite MUST look like: [regulatory] <title> (id=<chunk_id>) — short note.
+      Do not invent ids; only cite tool results.
+    markdown: |
+      # Model deck — High Risk Proxy PD
+
+      ## Purpose
+      Automated approve/deny for US unsecured personal loans (no human override).
+
+      ## Data
+      Features include ZIP code, first name, and "neighborhood income score"
+      derived from census tract. Target: charge-off in 18 months.
+
+      ## Methodology
+      Black-box ensemble. No reason codes. Threshold set to maximize approval volume.
+
+      ## Validation
+      In-sample only. No adverse-action reason testing. No disparate-impact analysis.
+
+      ## Monitoring
+      Annual refresh planned; no ongoing performance or fairness monitoring.

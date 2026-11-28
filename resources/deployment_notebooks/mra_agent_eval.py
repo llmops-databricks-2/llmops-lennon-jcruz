@@ -66,6 +66,4 @@ if eval_table is not None:
     logger.info("eval_results_preview=\n{}", eval_table[preview_cols].to_string())
 
 metric_summary = ", ".join(f"{k}={v}" for k, v in sorted(metrics.items())[:20])
-dbutils.notebook.exit(
-    f"cases={len(cases)}; eval_run_id={run_id}; metrics={{{metric_summary}}}"
-)
+dbutils.notebook.exit(f"cases={len(cases)}; eval_run_id={run_id}; metrics={{{metric_summary}}}")

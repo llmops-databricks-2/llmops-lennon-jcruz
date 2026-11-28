@@ -88,6 +88,5 @@ logger.info(
 )
 
 dbutils.notebook.exit(
-    f"decision={result.decision}; run_id={result.run_id}; "
-    f"traces={len(traces_df)}; session_id={session_id}"
+    f"decision={result.decision}; run_id={result.run_id}; traces={len(traces_df)}; session_id={session_id}"
 )

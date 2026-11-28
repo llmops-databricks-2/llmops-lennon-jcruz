@@ -1,9 +1,9 @@
 # Sanitized failure example — `grounded_evidence` on High Risk Proxy PD
 
-**Eval run:** `1725406606074df89e0fab486990577c` (job `mra-agent-eval`, after judge-model fix)  
-**Trace id (workspace):** `trace:/llmops_dev.lennon_jcruz.llmops/3d83be9fd6a46011358ecbf9dc237de3`  
-**Case:** `high_risk_unfair_features` / model `High_Risk_Proxy_PD`  
-**Agent decision:** `deny` (matches expected band)  
+**Eval run:** `1725406606074df89e0fab486990577c` (job `mra-agent-eval`, after judge-model fix)
+**Trace id (workspace):** `trace:/llmops_dev.lennon_jcruz.llmops/3d83be9fd6a46011358ecbf9dc237de3`
+**Case:** `high_risk_unfair_features` / model `High_Risk_Proxy_PD`
+**Agent decision:** `deny` (matches expected band)
 **`grounded_evidence`:** `no` (mean contribution to 0.0 across the run)
 
 Paths, emails, and raw UUIDs below are redacted. Chunk ids keep the real corpus naming pattern so the failure is reproducible.
@@ -70,7 +70,7 @@ So the agent did call tools and received titled regulatory chunks with ids.
   【occ-bulletin-2011-12_112】.
 ```
 
-Findings cite those ids, but bullets do **not** use the prompt’s preferred shape  
+Findings cite those ids, but bullets do **not** use the prompt’s preferred shape
 `[corpus] title (id=…)` — corpus is missing as an explicit field in the Evidence list.
 
 ---
@@ -91,7 +91,7 @@ This is a **scorer observability / Evidence-format** failure, not “agent skipp
 
 Code changes after this failure write-up:
 
-1. **Evidence format (prompts)** — `SYSTEM_PROMPT` / `REPORT_TEMPLATE` require every Evidence bullet as  
+1. **Evidence format (prompts)** — `SYSTEM_PROMPT` / `REPORT_TEMPLATE` require every Evidence bullet as
    `[corpus] title (id=<chunk_id>)` and forbid inventing ids not returned by tools.
 2. **Trace-aware retrieval** — search tools emit nested `RETRIEVER` spans with MLflow `Document` outputs (`tools.py`), and eval adds `RetrievalGroundedness` plus a softened `grounded_evidence` Guidelines rubric that accepts the `[corpus] title (id=…)` form without needing raw tool payloads in the request.
 
